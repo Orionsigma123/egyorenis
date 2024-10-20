@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JS Minecraft</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Minecraft</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/simplex-noise/simplex-noise.js"></script>
-  <script src="minecraft.js"></script>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="inventory">
+        <h2>Inventory</h2>
+        <div id="items"></div>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
