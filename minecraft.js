@@ -26,7 +26,8 @@ let player = {
   yaw: 0, // Horizontal rotation (left/right)
   pitch: 0, // Vertical rotation (up/down)
   velocityY: 0, // Vertical velocity for gravity and jumping
-  isOnGround: false // Track if the player is on the ground
+  isOnGround: false, // Track if the player is on the ground
+  maxPitch: Math.PI / 2 - 0.1 // Limit pitch to prevent full rotation (like Minecraft)
 };
 
 const gravity = -0.01; // Gravity force
@@ -40,12 +41,14 @@ document.body.addEventListener('click', () => {
   document.body.requestPointerLock();
 });
 
-// Track mouse movements for looking around
+// Track mouse movements for looking around (limit pitch like Minecraft)
 document.addEventListener('mousemove', (event) => {
   if (document.pointerLockElement === document.body) {
     player.yaw -= event.movementX * 0.002; // Left-right rotation
     player.pitch -= event.movementY * 0.002; // Up-down rotation
-    player.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, player.pitch)); // Limit pitch to prevent flipping
+    
+    // Limit pitch to prevent full 360-degree rotation (like Minecraft)
+    player.pitch = Math.max(-player.maxPitch, Math.min(player.maxPitch, player.pitch));
   }
 });
 
@@ -139,6 +142,13 @@ function isOnGround(x, y, z) {
   );
 }
 
+// Check if player can step up a block
+function canStepUp(x, y, z) {
+  return worldBlocks.some(block => 
+    Math.abs(block.x - x) < 0.5 && Math.abs(block.y - (y + 0.5)) < 0.5 && Math.abs(block.z - z) < 0.5
+  );
+}
+
 // Main game loop to update and render the scene
 function animate() {
   requestAnimationFrame(animate);
@@ -153,6 +163,12 @@ function animate() {
 
   // Rotate direction based on yaw (left-right movement)
   direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.yaw);
+
+  // Step up logic - if moving forward and there's a block step up, auto-jump
+  if (moveForward && canStepUp(camera.position.x + direction.x, camera.position.y, camera.position.z + direction.z)) {
+    camera.position.y += 1; // Auto step-up when moving forward into a block
+  }
+
   camera.position.add(direction);
 
   // Apply gravity and jumping
