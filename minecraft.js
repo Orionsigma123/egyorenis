@@ -85,7 +85,7 @@ function generateTerrain(width, depth) {
 
   for (let x = 0; x < width; x++) {
     for (let z = 0; z < depth; z++) {
-      const height = Math.floor(noise.noise2D(x / scale, z / scale) * 5);  // Generate height using noise
+      const height = Math.abs(Math.floor(noise.noise2D(x / scale, z / scale) * 5));  // Ensure height is positive
 
       // Create stone block for terrain base
       createTexturedBlock(x, height, z, stoneTexture);
@@ -181,3 +181,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
+
+// Set camera position above terrain, looking downward
+camera.position.set(10, 15, 10);  // Set the player's initial position above the terrain
+camera.lookAt(new THREE.Vector3(10, 0, 10)); // Look towards the center of the terrain
