@@ -1,44 +1,46 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.getElementById('container').appendChild(renderer.domElement);
 
-const tileSize = 32; // Size of each block
+const tileSize = 1;
 const inventory = []; // Array to store items in the inventory
-let selectedItem = null; // Current selected item for placing blocks
+let selectedItem = null; // Currently selected item for placing blocks
+const chunks = {}; // Store generated chunks
 
-// Function to generate a chunk of the world
-function generateChunk(x, y) {
-    const chunk = [];
-    for (let i = 0; i < 16; i++) {
-        const column = [];
-        for (let j = 0; j < 16; j++) {
-            if (j < 5) {
-                column.push('grass'); // Top layer
-            } else {
-                column.push('dirt'); // Below grass
+// Function to create a cube (block)
+function createBlock(color) {
+    const geometry = new THREE.BoxGeometry(tileSize, tileSize, tileSize);
+    const material = new THREE.MeshBasicMaterial({ color: color });
+    return new THREE.Mesh(geometry, material);
+}
+
+// Function to generate a chunk of blocks
+function generateChunk(chunkX, chunkY) {
+    const chunk = new THREE.Group();
+    for (let x = 0; x < 16; x++) {
+        for (let z = 0; z < 16; z++) {
+            const height = Math.floor(Math.random() * 5);
+            for (let y = 0; y < height; y++) {
+                const block = createBlock(y === height - 1 ? 0x00FF00 : 0x8B4513); // Grass or dirt
+                block.position.set(x + chunkX * 16, y, z + chunkY * 16);
+                chunk.add(block);
             }
         }
-        chunk.push(column);
     }
     return chunk;
 }
 
-// Load the initial world
-let world = {};
-for (let i = 0; i < 10; i++) {
-    for (let j = 0; j < 10; j++) {
-        world[`${i},${j}`] = generateChunk(i, j);
-    }
-}
-
-// Function to draw the world
-function drawWorld() {
-    for (const [key, chunk] of Object.entries(world)) {
-        const [x, y] = key.split(',').map(Number);
-        for (let i = 0; i < chunk.length; i++) {
-            for (let j = 0; j < chunk[i].length; j++) {
-                const tile = chunk[i][j];
-                ctx.fillStyle = tile === 'grass' ? 'green' : 'brown';
-                ctx.fillRect(x * 16 * tileSize + i * tileSize, y * 16 * tileSize + j * tileSize, tileSize, tileSize);
+// Function to load chunks
+function loadChunks() {
+    for (let x = -2; x <= 2; x++) {
+        for (let z = -2; z <= 2; z++) {
+            const chunkKey = `${x},${z}`;
+            if (!chunks[chunkKey]) {
+                const chunk = generateChunk(x, z);
+                scene.add(chunk);
+                chunks[chunkKey] = chunk;
             }
         }
     }
@@ -50,7 +52,7 @@ function addBlockToInventory(type) {
     updateInventoryDisplay();
 }
 
-// Update the inventory display
+// Update inventory display
 function updateInventoryDisplay() {
     const itemsDiv = document.getElementById('items');
     itemsDiv.innerHTML = '';
@@ -64,29 +66,53 @@ function updateInventoryDisplay() {
     });
 }
 
-// Function to place block
-function placeBlock(x, y) {
+// Place block function
+function placeBlock(x, y, z) {
     if (selectedItem) {
-        // Logic to place block in the world
-        const chunkX = Math.floor(x / (16 * tileSize));
-        const chunkY = Math.floor(y / (16 * tileSize));
-        const tileX = (x % (16 * tileSize)) / tileSize;
-        const tileY = (y % (16 * tileSize)) / tileSize;
-
-        if (world[`${chunkX},${chunkY}`]) {
-            world[`${chunkX},${chunkY}`][tileY][tileX] = selectedItem; // Place the block
-            drawWorld(); // Redraw the world
-        }
+        const blockColor = selectedItem === 'grass' ? 0x00FF00 : 0x8B4513; // Grass or dirt
+        const block = createBlock(blockColor);
+        block.position.set(Math.floor(x), Math.floor(y), Math.floor(z));
+        scene.add(block);
     }
 }
 
-// Mouse events to handle placing blocks
-canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    placeBlock(x, y);
+// Mouse controls
+let isPlacing = false;
+window.addEventListener('mousedown', () => { isPlacing = true; });
+window.addEventListener('mouseup', () => { isPlacing = false; });
+
+window.addEventListener('click', (event) => {
+    const mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children);
+
+    if (intersects.length > 0 && isPlacing) {
+        const { point } = intersects[0];
+        placeBlock(point.x, point.y, point.z);
+    }
 });
 
-// Initial draw
-drawWorld();
+// Set camera position
+camera.position.set(8, 5, 8);
+camera.lookAt(0, 0, 0);
+
+// Load initial chunks
+loadChunks();
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
+animate();
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
