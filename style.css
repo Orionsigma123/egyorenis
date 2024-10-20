@@ -6,3 +6,24 @@ body {
 canvas {
     display: block;
 }
+
+#inventory-ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-family: Arial, sans-serif;
+    z-index: 1;
+}
+
+#inventory-items {
+    display: flex;
+    gap: 5px;
+}
+
+.inventory-item {
+    width: 30px;
+    height: 30px;
+    border: 1px solid white;
+    cursor: pointer;
+}
