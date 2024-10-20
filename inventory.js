@@ -1,6 +1,6 @@
 class Inventory {
     constructor() {
-        this.items = ['grass', 'dirt', 'stone']; // Sample items
+        this.items = ['grass', 'dirt', 'stone', 'water', 'wood']; // Expanded items
         this.selectedItemIndex = 0; // Default selected item
     }
 
