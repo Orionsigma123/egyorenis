@@ -9,8 +9,12 @@ const inventory = new Inventory();
 const player = new Player(camera);
 const world = new World();
 world.addToScene(scene);
+const ui = new UI(inventory);
 
-camera.position.set(0, 5, 10); // Set initial camera position
+// Load previous game state if available
+GameState.loadWorld(world);
+
+camera.position.set(0, 5, 10);
 
 const animate = () => {
     requestAnimationFrame(animate);
@@ -22,15 +26,23 @@ const animate = () => {
 window.addEventListener('click', () => {
     const selectedBlock = world.blocks.find(block => {
         const distance = block.position.distanceTo(camera.position);
-        return distance < 2; // Adjust based on your needs
+        return distance < 2; // Adjust distance based on your needs
     });
 
     if (selectedBlock) {
         world.removeBlock(selectedBlock); // Break block
     } else {
         const selectedItem = inventory.getSelectedItem();
-        // Place block logic here
+        const position = new THREE.Vector3();
+        const block = world.createBlock(selectedItem, camera.position.clone().add(camera.getWorldDirection(position).multiplyScalar(2)));
+        world.blocks.push(block);
+        scene.add(block); // Place block
     }
 });
+
+// Save the game state every few seconds (for demonstration, you might want to trigger this by a key press)
+setInterval(() => {
+    GameState.saveWorld(world);
+}, 10000); // Save every 10 seconds
 
 animate();
